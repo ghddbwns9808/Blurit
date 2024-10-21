@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="blurit_black">#212823</color>
+    <color name="blurit_pink">#F6D9D5</color>
 </resources>
