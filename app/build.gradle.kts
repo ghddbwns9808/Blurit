@@ -51,4 +51,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.face.detection)
+    implementation(libs.fragment)
 }
