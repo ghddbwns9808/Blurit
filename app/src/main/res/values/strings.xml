@@ -10,4 +10,8 @@
     <!-- Home Fragment -->
     <string name="home_pick_photo">사진을 선택해 보세요</string>
 
+    <!-- Edit Fragment -->
+    <string name="edit_cancle">취소</string>
+    <string name="edit_save">저장</string>
+
 </resources>

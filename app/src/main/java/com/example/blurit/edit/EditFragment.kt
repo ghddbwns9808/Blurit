@@ -22,5 +22,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.d(TAG, "onViewCreated: ${mainViewModel.getUri()}")
+        binding.ivPhoto.setImageURI(mainViewModel.getUri())
+
+        binding.tvCancle.setOnClickListener {
+            requireActivity().supportFragmentManager.popBackStack()
+        }
     }
 }
