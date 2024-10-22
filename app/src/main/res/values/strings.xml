@@ -6,4 +6,8 @@
 
     <!-- Base Activity -->
     <string name="backpress_to_quit">한 번 더 눌러 앱 종료</string>
+
+    <!-- Home Fragment -->
+    <string name="home_pick_photo">사진을 선택해 보세요</string>
+
 </resources>
