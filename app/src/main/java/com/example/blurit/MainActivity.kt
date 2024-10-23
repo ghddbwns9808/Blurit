@@ -26,7 +26,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.layout_main_fragment, HomeFragment())
-            .addToBackStack(null)
             .commit()
 
     }
