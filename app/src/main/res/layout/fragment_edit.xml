@@ -41,16 +41,27 @@
 
     </LinearLayout>
 
-
-    <ImageView
-        android:id="@+id/iv_photo"
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_gravity="center"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"
-        android:layout_weight="1" />
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/iv_photo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageView
+            android:id="@+id/iv_blur_canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"/>
+
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/ll_menu"
@@ -137,13 +148,21 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:value="50"
-                android:valueFrom="0"
-                android:valueTo="100"
+                android:value="5"
+                android:valueFrom="1"
+                android:valueTo="10"
+                android:stepSize="1"
                 app:labelBehavior="floating"
                 app:thumbColor="@color/blurit_pinck_dark"
                 app:trackColorActive="@color/blurit_pinck_dark" />
 
+            <Button
+                android:id="@+id/btn_auto_mosaic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/blurit_pinck_dark"
+                style="@style/Blurit.Text"
+                android:text="@string/edit_apply"/>
 
         </LinearLayout>
 
@@ -167,14 +186,17 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:value="50"
-                android:valueFrom="0"
-                android:valueTo="100"
+                android:value="5"
+                android:valueFrom="1"
+                android:valueTo="10"
+                android:stepSize="1"
                 app:labelBehavior="floating"
                 app:thumbColor="@color/blurit_pinck_dark"
                 app:trackColorActive="@color/blurit_pinck_dark" />
 
         </LinearLayout>
+
+
     </LinearLayout>
 </LinearLayout>
 
