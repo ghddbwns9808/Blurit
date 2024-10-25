@@ -42,7 +42,8 @@
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/fl_canvas"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="center"
         android:layout_marginStart="12dp"
@@ -52,11 +53,17 @@
 
         <ImageView
             android:id="@+id/iv_photo"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <ImageView
             android:id="@+id/iv_blur_canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"/>
+
+        <ImageView
+            android:id="@+id/iv_thick_canvas"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/transparent"/>
@@ -186,11 +193,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:value="5"
-                android:valueFrom="1"
-                android:valueTo="10"
-                android:stepSize="1"
-                app:labelBehavior="floating"
+                android:value="80"
+                android:valueFrom="0"
+                android:valueTo="160"
+                app:labelBehavior="gone"
                 app:thumbColor="@color/blurit_pinck_dark"
                 app:trackColorActive="@color/blurit_pinck_dark" />
 
