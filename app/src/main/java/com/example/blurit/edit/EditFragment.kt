@@ -27,6 +27,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.IOException
+import java.util.Stack
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -51,6 +52,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     private lateinit var blurCanvas: Bitmap
     private lateinit var thickCanvas: Bitmap
 
+    private val undoStack: Stack<Bitmap> = Stack()
     private var mode: EditMode = EditMode.AUTO
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -61,6 +63,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     }
 
     private fun applyAutoMosaic(faces: List<Face>, size: Int) {
+        saveCanvasState()
         val canvas = Canvas(blurCanvas)
 
         faces.forEach { face ->
@@ -159,6 +162,20 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         binding.ivBlurCanvas.setImageBitmap(blurCanvas)
     }
 
+    private fun undoLastAction() {
+        if (undoStack.isNotEmpty()) {
+            blurCanvas = undoStack.pop()
+            binding.ivBlurCanvas.setImageBitmap(blurCanvas)
+        } else {
+            activity.showToast("취소할 작업이 없습니다.")
+        }
+    }
+
+    private fun saveCanvasState() {
+        val currentState = blurCanvas.copy(blurCanvas.config, true)
+        undoStack.push(currentState)
+    }
+
 
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
@@ -251,6 +268,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             mode = EditMode.ERASE
         }
 
+        binding.ivUndo.setOnClickListener {
+            undoLastAction()
+        }
+
         binding.btnAutoMosaic.setOnClickListener {
             detector.process(image)
                 .addOnSuccessListener { faces ->
@@ -280,12 +301,18 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         binding.ivBlurCanvas.setOnTouchListener { v, event ->
             when (mode) {
                 EditMode.MANUAL -> {
-                    if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        saveCanvasState()
+                        applyManualMosaic(event.x.toInt(), event.y.toInt())
+                    } else if (event.action == MotionEvent.ACTION_MOVE) {
                         applyManualMosaic(event.x.toInt(), event.y.toInt())
                     }
                 }
                 EditMode.ERASE -> {
-                    if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        saveCanvasState()
+                        applyErase(event.x.toInt(), event.y.toInt())
+                    } else if (event.action == MotionEvent.ACTION_MOVE) {
                         applyErase(event.x.toInt(), event.y.toInt())
                     }
                 }
@@ -293,6 +320,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             }
             true
         }
+
+
     }
 
     private fun initBitmap() {
@@ -335,7 +364,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             }
         })
     }
-
 
     enum class EditMode {
         AUTO, MANUAL, ERASE
