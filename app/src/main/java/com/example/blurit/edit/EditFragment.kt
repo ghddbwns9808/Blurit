@@ -167,7 +167,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             blurCanvas = undoStack.pop()
             binding.ivBlurCanvas.setImageBitmap(blurCanvas)
         } else {
-            activity.showToast("취소할 작업이 없습니다.")
+            activity.showToast(activity.getString(R.string.edit_cannot_undo))
         }
     }
 
