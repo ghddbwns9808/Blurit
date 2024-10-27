@@ -42,7 +42,8 @@
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/fl_canvas"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="center"
         android:layout_marginStart="12dp"
@@ -57,6 +58,12 @@
 
         <ImageView
             android:id="@+id/iv_blur_canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"/>
+
+        <ImageView
+            android:id="@+id/iv_thick_canvas"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/transparent"/>
@@ -153,14 +160,14 @@
                 android:valueTo="10"
                 android:stepSize="1"
                 app:labelBehavior="floating"
-                app:thumbColor="@color/blurit_pinck_dark"
-                app:trackColorActive="@color/blurit_pinck_dark" />
+                app:thumbColor="@color/blurit_pink_dark"
+                app:trackColorActive="@color/blurit_pink_dark" />
 
             <Button
                 android:id="@+id/btn_auto_mosaic"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="@color/blurit_pinck_dark"
+                android:backgroundTint="@color/blurit_pink_dark"
                 style="@style/Blurit.Text"
                 android:text="@string/edit_apply"/>
 
@@ -170,8 +177,7 @@
             android:id="@+id/ll_thick"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:orientation="horizontal">
 
             <TextView
                 style="@style/Blurit.Text"
@@ -186,13 +192,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:value="5"
-                android:valueFrom="1"
-                android:valueTo="10"
-                android:stepSize="1"
-                app:labelBehavior="floating"
-                app:thumbColor="@color/blurit_pinck_dark"
-                app:trackColorActive="@color/blurit_pinck_dark" />
+                android:value="80"
+                android:valueFrom="0"
+                android:valueTo="160"
+                android:enabled="false"
+                app:labelBehavior="gone"
+                app:thumbColor="@color/slider_inactive_gray"
+                app:trackColorActive="@color/slider_inactive_gray" />
 
         </LinearLayout>
 
