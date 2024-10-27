@@ -130,6 +130,36 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         binding.ivBlurCanvas.setImageBitmap(blurCanvas)
     }
 
+    private fun applyErase(touchX: Int, touchY: Int) {
+        val canvas = Canvas(blurCanvas)
+        val (bitmapX, bitmapY) = convertTouchToBitmap(touchX, touchY)
+
+        val thickness = (binding.sdThick.value + binding.ivThickCanvas.width / 30).toInt()
+
+        for (y in bitmapY - thickness until bitmapY + thickness) {
+            for (x in bitmapX - thickness until bitmapX + thickness) {
+                val distanceFromCenter = sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+
+                if (distanceFromCenter <= thickness) {
+                    val paint = Paint().apply {
+                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                    }
+
+                    canvas.drawRect(
+                        x.toFloat(),
+                        y.toFloat(),
+                        (x + 1).toFloat(),
+                        (y + 1).toFloat(),
+                        paint
+                    )
+                }
+            }
+        }
+
+        binding.ivBlurCanvas.setImageBitmap(blurCanvas)
+    }
+
+
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
         val imageView = binding.ivPhoto
@@ -248,10 +278,18 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         })
 
         binding.ivBlurCanvas.setOnTouchListener { v, event ->
-            if (mode == EditMode.MANUAL) {
-                if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
-                    applyManualMosaic(event.x.toInt(), event.y.toInt())
+            when (mode) {
+                EditMode.MANUAL -> {
+                    if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
+                        applyManualMosaic(event.x.toInt(), event.y.toInt())
+                    }
                 }
+                EditMode.ERASE -> {
+                    if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
+                        applyErase(event.x.toInt(), event.y.toInt())
+                    }
+                }
+                else -> Unit
             }
             true
         }
