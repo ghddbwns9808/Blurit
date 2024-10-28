@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.activityViewModels
 import com.example.blurit.MainActivity
 import com.example.blurit.MainViewModel
@@ -54,6 +55,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
     private val undoStack: Stack<Bitmap> = Stack()
     private var mode: EditMode = EditMode.AUTO
+
+    private lateinit var originalImageMetadata: Bitmap
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -176,6 +179,30 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         undoStack.push(currentState)
     }
 
+    private fun mergeBitmaps(background: Bitmap, overlay: Bitmap): Bitmap {
+        val combinedBitmap = Bitmap.createBitmap(background.width, background.height, background.config)
+        val canvas = Canvas(combinedBitmap)
+        canvas.drawBitmap(background, 0f, 0f, null)
+        canvas.drawBitmap(overlay, 0f, 0f, null)
+        return combinedBitmap
+    }
+
+    private fun saveBitmapToGallery(bitmap: Bitmap) {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, originalImageMetadata.width, originalImageMetadata.height, true)
+        val savedUri = MediaStore.Images.Media.insertImage(
+            requireContext().contentResolver,
+            resizedBitmap,
+            "${originalImageMetadata.config.name}_blurit",
+            "Image created by Blurit"
+        )
+
+        if (savedUri != null) {
+            activity.showToast(activity.getString(R.string.edit_save_success))
+        } else {
+            activity.showToast(activity.getString(R.string.edit_save_fail))
+        }
+    }
+
 
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
@@ -241,6 +268,11 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         binding.tvCancle.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
+        }
+
+        binding.tvSave.setOnClickListener {
+            val finalBitmap = mergeBitmaps(originalBitmap, blurCanvas)
+            saveBitmapToGallery(finalBitmap)
         }
 
         binding.sdBlur.setLabelFormatter {
@@ -337,6 +369,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         requireContext().contentResolver,
                         mainViewModel.getUri()
                     )
+                    originalImageMetadata = original
 
                     val aspectRatio = original.width.toFloat() / original.height
                     val imageViewHeight = (imageViewWidth / aspectRatio).toInt()
