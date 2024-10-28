@@ -16,8 +16,6 @@
     <string name="edit_blur">흐림</string>
     <string name="edit_thick">두께</string>
     <string name="edit_apply">적용</string>
-    <string name="edit_no_face">인식된 얼굴이 없습니다.</string>
-    <string name="edit_cannot_undo">취소할 작업이 없습니다.</string>
     <string name="edit_save_success">사진을 저장했습니다.</string>
     <string name="edit_save_fail">저장에 실패했습니다.</string>
 

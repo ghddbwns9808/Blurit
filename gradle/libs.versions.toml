@@ -11,6 +11,11 @@ activity = "1.9.1"
 constraintlayout = "2.1.4"
 faceDetection = "16.1.7"
 fragment = "1.8.4"
+testingCore = "2.1.0"              # 조정
+testingCoroutine = "1.6.4"         # 조정
+mockito = "4.6.1"                  # 조정
+mockitoKotlin = "4.1.0"            # 조정
+mockk = "1.12.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -23,6 +28,13 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 face-detection = {group = "com.google.mlkit", name = "face-detection", version.ref = "faceDetection"}
 fragment = {group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment"}
+testing-core = {group = "androidx.arch.core", name = "core-testing", version.ref = "testingCore"}
+testing-coroutine = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "testingCoroutine"}
+mockito-core = {group = "org.mockito", name = "mockito-core", version.ref = "mockito"}
+mockito-android = {group = "org.mockito", name = "mockito-android", version.ref = "mockito"}
+mockito-kotlin = {group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin"}
+mockk = {group = "io.mockk", name = "mockk", version.ref = "mockk"}
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

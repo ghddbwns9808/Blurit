@@ -27,6 +27,7 @@ android {
         }
     }
 
+
     buildFeatures{
         viewBinding = true
     }
@@ -37,6 +38,7 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
 }
 
 dependencies {
@@ -52,4 +54,12 @@ dependencies {
 
     implementation(libs.face.detection)
     implementation(libs.fragment)
+
+    // Testing
+    androidTestImplementation (libs.testing.core)
+    androidTestImplementation(libs.testing.coroutine)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.mockk)
+
 }
