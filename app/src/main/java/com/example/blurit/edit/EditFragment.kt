@@ -91,10 +91,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
          */
     }
 
-    private fun undoLastAction() {
-
-    }
-
     private fun mergeBitmaps(background: Bitmap, overlay: Bitmap): Bitmap {
         val combinedBitmap =
             Bitmap.createBitmap(background.width, background.height, background.config)
@@ -147,30 +143,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         startActivity(Intent.createChooser(shareIntent, "저장된 사진을 공유해 보세요"))
-    }
-
-    private fun showBrushPreview(thickness: Int) {
-        val rad = thickness + binding.ivThickCanvas.width / 30
-
-                      val thickBitmap = thickCanvas.copy(thickCanvas.config, true)
-        val canvas = Canvas(thickBitmap)
-        val paint = Paint().apply {
-            color = Color.argb(160, 100, 100, 100)
-            style = Paint.Style.FILL
-        }
-
-        val centerX = canvas.width / 2f
-        val centerY = canvas.height / 2f
-
-        canvas.drawCircle(centerX, centerY, rad.toFloat(), paint)
-        binding.ivThickCanvas.setImageBitmap(thickBitmap)
-    }
-
-    private fun eraseThickCircle() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            val emptyBitmap = thickCanvas.copy(thickCanvas.config, true)
-            binding.ivThickCanvas.setImageBitmap(emptyBitmap)
-        }, 1500)
     }
 
     private fun setSliderEnabledState(slider: Slider, enabled: Boolean) {
@@ -236,14 +208,13 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         binding.sdThick.addOnChangeListener { slider, value, fromUser ->
-            val thickness = value.toInt()
-            showBrushPreview(thickness)
+            viewModel.showBrushPreview(value.toInt(), binding.ivPhoto.width)
         }
 
         binding.sdThick.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) {}
             override fun onStopTrackingTouch(slider: Slider) {
-                eraseThickCircle()
+                viewModel.eraseThickCircle()
             }
         })
 

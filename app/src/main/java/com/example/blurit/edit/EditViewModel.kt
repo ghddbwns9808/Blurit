@@ -2,7 +2,10 @@ package com.example.blurit.edit
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.ImageView
 import androidx.lifecycle.LiveData
@@ -146,10 +149,42 @@ class EditViewModel: ViewModel() {
         }
     }
 
+    fun showBrushPreview(thickness: Int, width: Int) {
+        val rad = thickness + width / 30
+
+        val thickBitmap = Bitmap.createBitmap(_thicknessCanvas.value!!.width, _thicknessCanvas.value!!.height, _thicknessCanvas.value!!.config)
+        val canvas = Canvas(thickBitmap)
+
+        val paint = Paint().apply {
+            color = Color.argb(160, 100, 100, 100)
+            style = Paint.Style.FILL
+        }
+
+        val centerX = canvas.width / 2f
+        val centerY = canvas.height / 2f
+
+        canvas.drawCircle(centerX, centerY, rad.toFloat(), paint)
+
+        _thicknessCanvas.value = thickBitmap
+    }
+
+
+    fun eraseThickCircle() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            _thicknessCanvas.value?.let { bitmap ->
+                val canvas = Canvas(bitmap)
+                canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR)
+                _thicknessCanvas.value = bitmap
+            }
+        }, 1200)
+    }
+
+
     fun saveCanvasState() {
         val currentState = blurCanvas.value!!.copy(blurCanvas.value!!.config, true)
         undoStack.push(currentState)
     }
+
     private fun convertTouchToBitmap(imageView: ImageView, touchX: Int, touchY: Int): Pair<Int, Int> {
         val drawable = imageView.drawable ?: return Pair(0, 0)
 
