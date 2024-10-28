@@ -42,14 +42,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     private val mainViewModel: MainViewModel by activityViewModels()
     private val viewModel: EditViewModel by viewModels()
 
-
-    private lateinit var image: InputImage
-
     private lateinit var originalBitmap: Bitmap
     private lateinit var blurCanvas: Bitmap
     private lateinit var thickCanvas: Bitmap
 
-    private val undoStack: Stack<Bitmap> = Stack()
     private var mode: EditMode = EditMode.AUTO
 
     private lateinit var originalImageMetadata: Bitmap
@@ -61,41 +57,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         initObserver()
     }
 
-
-    private fun applyManualMosaic(touchX: Int, touchY: Int) {
-        val canvas = Canvas(blurCanvas)
-        val (bitmapX, bitmapY) = convertTouchToBitmap(touchX, touchY)
-
-        val thickness = (binding.sdThick.value + binding.ivThickCanvas.width / 30).toInt()
-        val blurSize = thickness / (13 - binding.sdBlur.value.toInt())
-
-        for (y in bitmapY - thickness until bitmapY + thickness step blurSize) {
-            for (x in bitmapX - thickness until bitmapX + thickness step blurSize) {
-                val distanceFromCenter =
-                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
-
-                if (distanceFromCenter <= thickness) {
-                    val pixelColor = originalBitmap.getPixel(
-                        x.coerceIn(0, originalBitmap.width - 1),
-                        y.coerceIn(0, originalBitmap.height - 1)
-                    )
-
-                    val paint = Paint().apply { color = pixelColor }
-                    canvas.drawRect(
-                        x.toFloat(),
-                        y.toFloat(),
-                        (x + blurSize).toFloat(),
-                        (y + blurSize).toFloat(),
-                        paint
-                    )
-                }
-            }
-        }
-
-        binding.ivBlurCanvas.setImageBitmap(blurCanvas)
-    }
-
     private fun applyErase(touchX: Int, touchY: Int) {
+        /*
         val canvas = Canvas(blurCanvas)
         val (bitmapX, bitmapY) = convertTouchToBitmap(touchX, touchY)
 
@@ -124,20 +87,12 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         binding.ivBlurCanvas.setImageBitmap(blurCanvas)
+
+         */
     }
 
     private fun undoLastAction() {
-        if (undoStack.isNotEmpty()) {
-            blurCanvas = undoStack.pop()
-            binding.ivBlurCanvas.setImageBitmap(blurCanvas)
-        } else {
-            activity.showToast(activity.getString(R.string.edit_cannot_undo))
-        }
-    }
 
-    private fun saveCanvasState() {
-        val currentState = blurCanvas.copy(blurCanvas.config, true)
-        undoStack.push(currentState)
     }
 
     private fun mergeBitmaps(background: Bitmap, overlay: Bitmap): Bitmap {
@@ -194,30 +149,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         startActivity(Intent.createChooser(shareIntent, "저장된 사진을 공유해 보세요"))
     }
 
-    private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
-        val imageView = binding.ivPhoto
-        val drawable = imageView.drawable ?: return Pair(0, 0)
-
-        val intrinsicWidth = drawable.intrinsicWidth
-        val intrinsicHeight = drawable.intrinsicHeight
-
-        val scaleX = imageView.width.toFloat() / intrinsicWidth
-        val scaleY = imageView.height.toFloat() / intrinsicHeight
-        val scale = minOf(scaleX, scaleY)
-
-        val offsetX = (imageView.width - intrinsicWidth * scale) / 2
-        val offsetY = (imageView.height - intrinsicHeight * scale) / 2
-
-        val bitmapX = ((touchX - offsetX) / scale).toInt().coerceIn(0, intrinsicWidth - 1)
-        val bitmapY = ((touchY - offsetY) / scale).toInt().coerceIn(0, intrinsicHeight - 1)
-
-        return Pair(bitmapX, bitmapY)
-    }
-
     private fun showBrushPreview(thickness: Int) {
         val rad = thickness + binding.ivThickCanvas.width / 30
 
-        val thickBitmap = thickCanvas.copy(thickCanvas.config, true)
+                      val thickBitmap = thickCanvas.copy(thickCanvas.config, true)
         val canvas = Canvas(thickBitmap)
         val paint = Paint().apply {
             color = Color.argb(160, 100, 100, 100)
@@ -293,7 +228,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         binding.ivUndo.setOnClickListener {
-            undoLastAction()
+            viewModel.undoLastAction()
         }
 
         binding.btnAutoMosaic.setOnClickListener {
@@ -316,16 +251,28 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             when (mode) {
                 EditMode.MANUAL -> {
                     if (event.action == MotionEvent.ACTION_DOWN) {
-                        saveCanvasState()
-                        applyManualMosaic(event.x.toInt(), event.y.toInt())
+                        viewModel.saveCanvasState()
+                        viewModel.applyManualMosaic(
+                            binding.ivPhoto,
+                            event.x.toInt(),
+                            event.y.toInt(),
+                            binding.sdThick.value.toInt(),
+                            binding.sdBlur.value.toInt()
+                        )
                     } else if (event.action == MotionEvent.ACTION_MOVE) {
-                        applyManualMosaic(event.x.toInt(), event.y.toInt())
+                        viewModel.applyManualMosaic(
+                            binding.ivPhoto,
+                            event.x.toInt(),
+                            event.y.toInt(),
+                            binding.sdThick.value.toInt(),
+                            binding.sdBlur.value.toInt()
+                        )
                     }
                 }
 
                 EditMode.ERASE -> {
                     if (event.action == MotionEvent.ACTION_DOWN) {
-                        saveCanvasState()
+                        viewModel.saveCanvasState()
                         applyErase(event.x.toInt(), event.y.toInt())
                     } else if (event.action == MotionEvent.ACTION_MOVE) {
                         applyErase(event.x.toInt(), event.y.toInt())
@@ -370,7 +317,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         })
     }
 
-    private fun initObserver(){
+    private fun initObserver() {
         viewModel.originalCanvas.observe(viewLifecycleOwner) { bitmap ->
             binding.ivPhoto.setImageBitmap(bitmap)
         }
@@ -383,7 +330,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             binding.ivThickCanvas.setImageBitmap(bitmap)
         }
 
-        viewModel.toastMsg.observe(viewLifecycleOwner){ msg ->
+        viewModel.toastMsg.observe(viewLifecycleOwner) { msg ->
             activity.showToast(msg)
         }
     }

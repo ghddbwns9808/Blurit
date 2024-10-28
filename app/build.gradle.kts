@@ -61,7 +61,5 @@ dependencies {
     androidTestImplementation(libs.mockito.android)
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockk)
-    testImplementation ("org.mockito:mockito-inline:2.21.0")
-    testImplementation ("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 
 }

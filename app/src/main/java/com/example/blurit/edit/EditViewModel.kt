@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.Log
+import android.widget.ImageView
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,6 +14,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.IOException
+import java.util.Stack
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -39,6 +41,7 @@ class EditViewModel: ViewModel() {
 
     private lateinit var originalBitmapMetadata: Bitmap
 
+    private val undoStack: Stack<Bitmap> = Stack()
 
     init {
         val highAccuracyOpts = FaceDetectorOptions.Builder()
@@ -63,7 +66,8 @@ class EditViewModel: ViewModel() {
             }
     }
 
-    private fun applyAutoMosaic(faces: List<Face>, size: Int) {
+    fun applyAutoMosaic(faces: List<Face>, size: Int) {
+        saveCanvasState()
         val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
         val canvas = Canvas(blurBitmap)
 
@@ -100,6 +104,71 @@ class EditViewModel: ViewModel() {
         _blurCanvas.value = blurBitmap
     }
 
+    fun applyManualMosaic(imageView: ImageView, touchX: Int, touchY: Int, thick: Int, blur: Int){
+        val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
+        val canvas = Canvas(blurBitmap)
+        val (bitmapX, bitmapY) = convertTouchToBitmap(imageView, touchX, touchY)
+
+        val thickness = (thick + (_thicknessCanvas.value?.width ?: 1000) / 30)
+        val blurSize = thickness / (13 - blur)
+
+        for (y in bitmapY - thickness until bitmapY + thickness step blurSize) {
+            for (x in bitmapX - thickness until bitmapX + thickness step blurSize) {
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+
+                if (distanceFromCenter <= thickness) {
+                    val pixelColor = originalCanvas.value!!.getPixel(
+                        x.coerceIn(0, originalCanvas.value!!.width - 1),
+                        y.coerceIn(0, originalCanvas.value!!.height - 1)
+                    )
+
+                    val paint = Paint().apply { color = pixelColor }
+                    canvas.drawRect(
+                        x.toFloat(),
+                        y.toFloat(),
+                        (x + blurSize).toFloat(),
+                        (y + blurSize).toFloat(),
+                        paint
+                    )
+                }
+            }
+        }
+
+        _blurCanvas.value = blurBitmap
+    }
+
+    fun undoLastAction() {
+        if (undoStack.isNotEmpty()) {
+            _blurCanvas.value = undoStack.pop()
+        } else {
+            _toastMsg.value = EMPTY_STACK
+        }
+    }
+
+    fun saveCanvasState() {
+        val currentState = blurCanvas.value!!.copy(blurCanvas.value!!.config, true)
+        undoStack.push(currentState)
+    }
+    private fun convertTouchToBitmap(imageView: ImageView, touchX: Int, touchY: Int): Pair<Int, Int> {
+        val drawable = imageView.drawable ?: return Pair(0, 0)
+
+        val intrinsicWidth = drawable.intrinsicWidth
+        val intrinsicHeight = drawable.intrinsicHeight
+
+        val scaleX = imageView.width.toFloat() / intrinsicWidth
+        val scaleY = imageView.height.toFloat() / intrinsicHeight
+        val scale = minOf(scaleX, scaleY)
+
+        val offsetX = (imageView.width - intrinsicWidth * scale) / 2
+        val offsetY = (imageView.height - intrinsicHeight * scale) / 2
+
+        val bitmapX = ((touchX - offsetX) / scale).toInt().coerceIn(0, intrinsicWidth - 1)
+        val bitmapY = ((touchY - offsetY) / scale).toInt().coerceIn(0, intrinsicHeight - 1)
+
+        return Pair(bitmapX, bitmapY)
+    }
+
     fun initBitmap(original: Bitmap, imageViewWidth: Int){
         try {
             originalBitmapMetadata = original
@@ -130,6 +199,7 @@ class EditViewModel: ViewModel() {
 
     companion object{
         const val NO_FACE_MSG = "인식된 얼굴이 없습니다."
+        const val EMPTY_STACK = "취소할 작업이 없습니다."
     }
 
 }
