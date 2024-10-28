@@ -142,7 +142,7 @@ class EditViewModel : ViewModel() {
         _blurCanvas.value = blurBitmap
     }
 
-    fun applyErase(imageView: ImageView, touchX: Int, touchY: Int, thick: Int, blur: Int) {
+    fun applyErase(imageView: ImageView, touchX: Int, touchY: Int, thick: Int) {
         val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
         val canvas = Canvas(blurBitmap)
         val (bitmapX, bitmapY) = convertTouchToBitmap(imageView, touchX, touchY)

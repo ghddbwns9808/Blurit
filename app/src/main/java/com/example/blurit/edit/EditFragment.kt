@@ -4,15 +4,10 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.ImageDecoder
-import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.view.MotionEvent
 import android.view.View
@@ -26,14 +21,9 @@ import com.example.blurit.R
 import com.example.blurit.base.BaseFragment
 import com.example.blurit.databinding.FragmentEditBinding
 import com.google.android.material.slider.Slider
-import com.google.mlkit.vision.common.InputImage
 import java.io.IOException
 import java.io.OutputStream
-import java.util.Stack
-import kotlin.math.pow
-import kotlin.math.sqrt
 
-private const val TAG = "EditFragment_hong"
 
 class EditFragment : BaseFragment<FragmentEditBinding>(
     FragmentEditBinding::bind, R.layout.fragment_edit
@@ -137,16 +127,14 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                             binding.ivPhoto,
                             event.x.toInt(),
                             event.y.toInt(),
-                            binding.sdThick.value.toInt(),
-                            binding.sdBlur.value.toInt()
+                            binding.sdThick.value.toInt()
                         )
                     } else if (event.action == MotionEvent.ACTION_MOVE) {
                         viewModel.applyErase(
                             binding.ivPhoto,
                             event.x.toInt(),
                             event.y.toInt(),
-                            binding.sdThick.value.toInt(),
-                            binding.sdBlur.value.toInt()
+                            binding.sdThick.value.toInt()
                         )
                     }
                 }
