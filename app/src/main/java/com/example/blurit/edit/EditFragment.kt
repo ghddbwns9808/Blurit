@@ -1,10 +1,13 @@
 package com.example.blurit.edit
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ImageDecoder
 import android.graphics.Paint
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,7 +17,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.activityViewModels
 import com.example.blurit.MainActivity
 import com.example.blurit.MainViewModel
@@ -28,6 +30,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.IOException
+import java.io.OutputStream
 import java.util.Stack
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -119,7 +122,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         for (y in bitmapY - thickness until bitmapY + thickness step blurSize) {
             for (x in bitmapX - thickness until bitmapX + thickness step blurSize) {
-                val distanceFromCenter = sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
 
                 if (distanceFromCenter <= thickness) {
                     val pixelColor = originalBitmap.getPixel(
@@ -128,7 +132,13 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                     )
 
                     val paint = Paint().apply { color = pixelColor }
-                    canvas.drawRect(x.toFloat(), y.toFloat(), (x + blurSize).toFloat(), (y + blurSize).toFloat(), paint)
+                    canvas.drawRect(
+                        x.toFloat(),
+                        y.toFloat(),
+                        (x + blurSize).toFloat(),
+                        (y + blurSize).toFloat(),
+                        paint
+                    )
                 }
             }
         }
@@ -144,11 +154,13 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         for (y in bitmapY - thickness until bitmapY + thickness) {
             for (x in bitmapX - thickness until bitmapX + thickness) {
-                val distanceFromCenter = sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
 
                 if (distanceFromCenter <= thickness) {
                     val paint = Paint().apply {
-                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                        xfermode =
+                            android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
                     }
 
                     canvas.drawRect(
@@ -180,29 +192,61 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     }
 
     private fun mergeBitmaps(background: Bitmap, overlay: Bitmap): Bitmap {
-        val combinedBitmap = Bitmap.createBitmap(background.width, background.height, background.config)
+        val combinedBitmap =
+            Bitmap.createBitmap(background.width, background.height, background.config)
         val canvas = Canvas(combinedBitmap)
         canvas.drawBitmap(background, 0f, 0f, null)
         canvas.drawBitmap(overlay, 0f, 0f, null)
         return combinedBitmap
     }
 
-    private fun saveBitmapToGallery(bitmap: Bitmap) {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, originalImageMetadata.width, originalImageMetadata.height, true)
-        val savedUri = MediaStore.Images.Media.insertImage(
-            requireContext().contentResolver,
-            resizedBitmap,
-            "${originalImageMetadata.config.name}_blurit",
-            "Image created by Blurit"
-        )
+//    private fun saveBitmapToGallery(bitmap: Bitmap) {
+//        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, originalImageMetadata.width, originalImageMetadata.height, true)
+//        val savedUri = MediaStore.Images.Media.insertImage(
+//            requireContext().contentResolver,
+//            resizedBitmap,
+//            "${originalImageMetadata.config.name}_blurit",
+//            "Image created by Blurit"
+//        )
+//
+//        if (savedUri != null) {
+//            activity.showToast(activity.getString(R.string.edit_save_success))
+//        } else {
+//            activity.showToast(activity.getString(R.string.edit_save_fail))
+//        }
+//    }
 
-        if (savedUri != null) {
-            activity.showToast(activity.getString(R.string.edit_save_success))
+    private fun saveBitmapToGallery(bitmap: Bitmap) {
+        val filename = "${originalImageMetadata.config.name}_blurit.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/BlurIt")
+        }
+
+        val resolver = requireContext().contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        if (uri != null) {
+            var outputStream: OutputStream? = null
+            try {
+                outputStream = resolver.openOutputStream(uri)
+                if (outputStream != null) {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                    activity.showToast(activity.getString(R.string.edit_save_success))
+                } else {
+                    activity.showToast(activity.getString(R.string.edit_save_fail))
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                activity.showToast(activity.getString(R.string.edit_save_fail))
+            } finally {
+                outputStream?.close()
+            }
         } else {
             activity.showToast(activity.getString(R.string.edit_save_fail))
         }
     }
-
 
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
@@ -224,7 +268,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         return Pair(bitmapX, bitmapY)
     }
-
 
 
     private fun showBrushPreview(thickness: Int) {
@@ -254,14 +297,19 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     private fun setSliderEnabledState(slider: Slider, enabled: Boolean) {
         if (enabled) {
             slider.isEnabled = true
-            slider.trackActiveTintList = ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
-            slider.thumbTintList = ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
+            slider.trackActiveTintList =
+                ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
+            slider.thumbTintList =
+                ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
         } else {
             slider.isEnabled = false
-            slider.trackActiveTintList = ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
-            slider.thumbTintList = ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
+            slider.trackActiveTintList =
+                ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
+            slider.thumbTintList =
+                ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
         }
     }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun initView() {
         initBitmap()
@@ -340,6 +388,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         applyManualMosaic(event.x.toInt(), event.y.toInt())
                     }
                 }
+
                 EditMode.ERASE -> {
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         saveCanvasState()
@@ -348,6 +397,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         applyErase(event.x.toInt(), event.y.toInt())
                     }
                 }
+
                 else -> Unit
             }
             true
@@ -365,16 +415,27 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                 try {
                     val imageViewWidth = binding.ivPhoto.width
 
-                    val original = MediaStore.Images.Media.getBitmap(
-                        requireContext().contentResolver,
-                        mainViewModel.getUri()
-                    )
+                    val original = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ImageDecoder.decodeBitmap(
+                            ImageDecoder.createSource(
+                                requireContext().contentResolver,
+                                mainViewModel.getUri()!!
+                            )
+                        )
+                    } else {
+                        MediaStore.Images.Media.getBitmap(
+                            requireContext().contentResolver,
+                            mainViewModel.getUri()
+                        )
+                    }
+
                     originalImageMetadata = original
 
                     val aspectRatio = original.width.toFloat() / original.height
                     val imageViewHeight = (imageViewWidth / aspectRatio).toInt()
 
-                    originalBitmap = Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
+                    originalBitmap =
+                        Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
                     binding.ivPhoto.setImageBitmap(originalBitmap)
                     image = InputImage.fromBitmap(originalBitmap, 0)
 
