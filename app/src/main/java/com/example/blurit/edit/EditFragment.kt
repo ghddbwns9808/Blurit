@@ -2,11 +2,13 @@ package com.example.blurit.edit
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.Paint
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -218,6 +220,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                 if (outputStream != null) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                     activity.showToast(activity.getString(R.string.edit_save_success))
+
+                    showShareDialog(uri)
                 } else {
                     activity.showToast(activity.getString(R.string.edit_save_fail))
                 }
@@ -232,6 +236,16 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
     }
 
+    private fun showShareDialog(uri: Uri) {
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, uri)
+            type = "image/jpeg"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        startActivity(Intent.createChooser(shareIntent, "저장된 사진을 공유해 보세요"))
+    }
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
         val imageView = binding.ivPhoto
@@ -252,7 +266,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         return Pair(bitmapX, bitmapY)
     }
-
 
     private fun showBrushPreview(thickness: Int) {
         val rad = thickness + binding.ivThickCanvas.width / 30
@@ -420,6 +433,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
                     originalBitmap =
                         Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
+                            .copy(Bitmap.Config.ARGB_8888, true)
                     binding.ivPhoto.setImageBitmap(originalBitmap)
                     image = InputImage.fromBitmap(originalBitmap, 0)
 
