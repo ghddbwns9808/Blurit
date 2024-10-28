@@ -1,10 +1,15 @@
 package com.example.blurit.edit
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ImageDecoder
 import android.graphics.Paint
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -27,6 +32,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.IOException
+import java.io.OutputStream
 import java.util.Stack
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -54,6 +60,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
     private val undoStack: Stack<Bitmap> = Stack()
     private var mode: EditMode = EditMode.AUTO
+
+    private lateinit var originalImageMetadata: Bitmap
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -116,7 +124,8 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         for (y in bitmapY - thickness until bitmapY + thickness step blurSize) {
             for (x in bitmapX - thickness until bitmapX + thickness step blurSize) {
-                val distanceFromCenter = sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
 
                 if (distanceFromCenter <= thickness) {
                     val pixelColor = originalBitmap.getPixel(
@@ -125,7 +134,13 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                     )
 
                     val paint = Paint().apply { color = pixelColor }
-                    canvas.drawRect(x.toFloat(), y.toFloat(), (x + blurSize).toFloat(), (y + blurSize).toFloat(), paint)
+                    canvas.drawRect(
+                        x.toFloat(),
+                        y.toFloat(),
+                        (x + blurSize).toFloat(),
+                        (y + blurSize).toFloat(),
+                        paint
+                    )
                 }
             }
         }
@@ -141,11 +156,13 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         for (y in bitmapY - thickness until bitmapY + thickness) {
             for (x in bitmapX - thickness until bitmapX + thickness) {
-                val distanceFromCenter = sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
 
                 if (distanceFromCenter <= thickness) {
                     val paint = Paint().apply {
-                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                        xfermode =
+                            android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
                     }
 
                     canvas.drawRect(
@@ -167,7 +184,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             blurCanvas = undoStack.pop()
             binding.ivBlurCanvas.setImageBitmap(blurCanvas)
         } else {
-            activity.showToast("취소할 작업이 없습니다.")
+            activity.showToast(activity.getString(R.string.edit_cannot_undo))
         }
     }
 
@@ -176,7 +193,59 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         undoStack.push(currentState)
     }
 
+    private fun mergeBitmaps(background: Bitmap, overlay: Bitmap): Bitmap {
+        val combinedBitmap =
+            Bitmap.createBitmap(background.width, background.height, background.config)
+        val canvas = Canvas(combinedBitmap)
+        canvas.drawBitmap(background, 0f, 0f, null)
+        canvas.drawBitmap(overlay, 0f, 0f, null)
+        return combinedBitmap
+    }
 
+    private fun saveBitmapToGallery(bitmap: Bitmap) {
+        val filename = "${originalImageMetadata.config.name}_blurit.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/BlurIt")
+        }
+
+        val resolver = requireContext().contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        if (uri != null) {
+            var outputStream: OutputStream? = null
+            try {
+                outputStream = resolver.openOutputStream(uri)
+                if (outputStream != null) {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                    activity.showToast(activity.getString(R.string.edit_save_success))
+
+                    showShareDialog(uri)
+                } else {
+                    activity.showToast(activity.getString(R.string.edit_save_fail))
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                activity.showToast(activity.getString(R.string.edit_save_fail))
+            } finally {
+                outputStream?.close()
+            }
+        } else {
+            activity.showToast(activity.getString(R.string.edit_save_fail))
+        }
+    }
+
+    private fun showShareDialog(uri: Uri) {
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, uri)
+            type = "image/jpeg"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        startActivity(Intent.createChooser(shareIntent, "저장된 사진을 공유해 보세요"))
+    }
 
     private fun convertTouchToBitmap(touchX: Int, touchY: Int): Pair<Int, Int> {
         val imageView = binding.ivPhoto
@@ -197,8 +266,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 
         return Pair(bitmapX, bitmapY)
     }
-
-
 
     private fun showBrushPreview(thickness: Int) {
         val rad = thickness + binding.ivThickCanvas.width / 30
@@ -227,20 +294,30 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
     private fun setSliderEnabledState(slider: Slider, enabled: Boolean) {
         if (enabled) {
             slider.isEnabled = true
-            slider.trackActiveTintList = ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
-            slider.thumbTintList = ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
+            slider.trackActiveTintList =
+                ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
+            slider.thumbTintList =
+                ContextCompat.getColorStateList(_activity, R.color.blurit_pink_dark)!!
         } else {
             slider.isEnabled = false
-            slider.trackActiveTintList = ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
-            slider.thumbTintList = ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
+            slider.trackActiveTintList =
+                ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
+            slider.thumbTintList =
+                ContextCompat.getColorStateList(_activity, R.color.slider_inactive_gray)!!
         }
     }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun initView() {
         initBitmap()
 
         binding.tvCancle.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
+        }
+
+        binding.tvSave.setOnClickListener {
+            val finalBitmap = mergeBitmaps(originalBitmap, blurCanvas)
+            saveBitmapToGallery(finalBitmap)
         }
 
         binding.sdBlur.setLabelFormatter {
@@ -308,6 +385,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         applyManualMosaic(event.x.toInt(), event.y.toInt())
                     }
                 }
+
                 EditMode.ERASE -> {
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         saveCanvasState()
@@ -316,6 +394,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         applyErase(event.x.toInt(), event.y.toInt())
                     }
                 }
+
                 else -> Unit
             }
             true
@@ -333,15 +412,28 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                 try {
                     val imageViewWidth = binding.ivPhoto.width
 
-                    val original = MediaStore.Images.Media.getBitmap(
-                        requireContext().contentResolver,
-                        mainViewModel.getUri()
-                    )
+                    val original = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ImageDecoder.decodeBitmap(
+                            ImageDecoder.createSource(
+                                requireContext().contentResolver,
+                                mainViewModel.getUri()!!
+                            )
+                        )
+                    } else {
+                        MediaStore.Images.Media.getBitmap(
+                            requireContext().contentResolver,
+                            mainViewModel.getUri()
+                        )
+                    }
+
+                    originalImageMetadata = original
 
                     val aspectRatio = original.width.toFloat() / original.height
                     val imageViewHeight = (imageViewWidth / aspectRatio).toInt()
 
-                    originalBitmap = Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
+                    originalBitmap =
+                        Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
+                            .copy(Bitmap.Config.ARGB_8888, true)
                     binding.ivPhoto.setImageBitmap(originalBitmap)
                     image = InputImage.fromBitmap(originalBitmap, 0)
 
