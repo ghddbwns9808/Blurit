@@ -22,27 +22,28 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 private const val TAG = "EditViewModel_hong"
-class EditViewModel: ViewModel() {
+
+class EditViewModel : ViewModel() {
     private var detector: FaceDetector
     private lateinit var image: InputImage
 
     private val _originalCanvas = MutableLiveData<Bitmap>()
-    val originalCanvas : LiveData<Bitmap>
+    val originalCanvas: LiveData<Bitmap>
         get() = _originalCanvas
 
     private val _blurCanvas = MutableLiveData<Bitmap>()
-    val blurCanvas : LiveData<Bitmap>
+    val blurCanvas: LiveData<Bitmap>
         get() = _blurCanvas
 
     private val _thicknessCanvas = MutableLiveData<Bitmap>()
-    val thicknessCanvas : LiveData<Bitmap>
+    val thicknessCanvas: LiveData<Bitmap>
         get() = _thicknessCanvas
 
     private val _toastMsg = MutableLiveData<String>()
-    val toastMsg : LiveData<String>
+    val toastMsg: LiveData<String>
         get() = _toastMsg
 
-    private lateinit var originalBitmapMetadata: Bitmap
+    lateinit var originalBitmapMetadata: Bitmap
 
     private val undoStack: Stack<Bitmap> = Stack()
 
@@ -55,7 +56,7 @@ class EditViewModel: ViewModel() {
         detector = FaceDetection.getClient(highAccuracyOpts)
     }
 
-    fun autoMosaic(blur: Int){
+    fun autoMosaic(blur: Int) {
         detector.process(image)
             .addOnSuccessListener { faces ->
                 if (faces.isNotEmpty()) {
@@ -107,7 +108,7 @@ class EditViewModel: ViewModel() {
         _blurCanvas.value = blurBitmap
     }
 
-    fun applyManualMosaic(imageView: ImageView, touchX: Int, touchY: Int, thick: Int, blur: Int){
+    fun applyManualMosaic(imageView: ImageView, touchX: Int, touchY: Int, thick: Int, blur: Int) {
         val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
         val canvas = Canvas(blurBitmap)
         val (bitmapX, bitmapY) = convertTouchToBitmap(imageView, touchX, touchY)
@@ -141,6 +142,38 @@ class EditViewModel: ViewModel() {
         _blurCanvas.value = blurBitmap
     }
 
+    fun applyErase(imageView: ImageView, touchX: Int, touchY: Int, thick: Int, blur: Int) {
+        val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
+        val canvas = Canvas(blurBitmap)
+        val (bitmapX, bitmapY) = convertTouchToBitmap(imageView, touchX, touchY)
+
+        val thickness = (thick + _thicknessCanvas.value!!.width / 30)
+
+        for (y in bitmapY - thickness until bitmapY + thickness) {
+            for (x in bitmapX - thickness until bitmapX + thickness) {
+                val distanceFromCenter =
+                    sqrt((x - bitmapX).toDouble().pow(2.0) + (y - bitmapY).toDouble().pow(2.0))
+
+                if (distanceFromCenter <= thickness) {
+                    val paint = Paint().apply {
+                        xfermode =
+                            android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                    }
+
+                    canvas.drawRect(
+                        x.toFloat(),
+                        y.toFloat(),
+                        (x + 1).toFloat(),
+                        (y + 1).toFloat(),
+                        paint
+                    )
+                }
+            }
+        }
+
+        _blurCanvas.value = blurBitmap
+    }
+
     fun undoLastAction() {
         if (undoStack.isNotEmpty()) {
             _blurCanvas.value = undoStack.pop()
@@ -152,7 +185,11 @@ class EditViewModel: ViewModel() {
     fun showBrushPreview(thickness: Int, width: Int) {
         val rad = thickness + width / 30
 
-        val thickBitmap = Bitmap.createBitmap(_thicknessCanvas.value!!.width, _thicknessCanvas.value!!.height, _thicknessCanvas.value!!.config)
+        val thickBitmap = Bitmap.createBitmap(
+            _thicknessCanvas.value!!.width,
+            _thicknessCanvas.value!!.height,
+            _thicknessCanvas.value!!.config
+        )
         val canvas = Canvas(thickBitmap)
 
         val paint = Paint().apply {
@@ -185,7 +222,11 @@ class EditViewModel: ViewModel() {
         undoStack.push(currentState)
     }
 
-    private fun convertTouchToBitmap(imageView: ImageView, touchX: Int, touchY: Int): Pair<Int, Int> {
+    private fun convertTouchToBitmap(
+        imageView: ImageView,
+        touchX: Int,
+        touchY: Int
+    ): Pair<Int, Int> {
         val drawable = imageView.drawable ?: return Pair(0, 0)
 
         val intrinsicWidth = drawable.intrinsicWidth
@@ -204,15 +245,28 @@ class EditViewModel: ViewModel() {
         return Pair(bitmapX, bitmapY)
     }
 
-    fun initBitmap(original: Bitmap, imageViewWidth: Int){
+    fun mergeBitmaps(): Bitmap {
+        val background = _originalCanvas.value!!
+        val overlay = _blurCanvas.value!!
+
+        val combinedBitmap =
+            Bitmap.createBitmap(background.width, background.height, background.config)
+        val canvas = Canvas(combinedBitmap)
+        canvas.drawBitmap(background, 0f, 0f, null)
+        canvas.drawBitmap(overlay, 0f, 0f, null)
+        return combinedBitmap
+    }
+
+    fun initBitmap(original: Bitmap, imageViewWidth: Int) {
         try {
             originalBitmapMetadata = original
 
             val aspectRatio = original.width.toFloat() / original.height
             val imageViewHeight = (imageViewWidth / aspectRatio).toInt()
 
-            val originalBitmap = Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
-                .copy(Bitmap.Config.ARGB_8888, true)
+            val originalBitmap =
+                Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
+                    .copy(Bitmap.Config.ARGB_8888, true)
             _originalCanvas.value = originalBitmap
 
             image = InputImage.fromBitmap(originalBitmap, 0)
@@ -232,7 +286,7 @@ class EditViewModel: ViewModel() {
         }
     }
 
-    companion object{
+    companion object {
         const val NO_FACE_MSG = "인식된 얼굴이 없습니다."
         const val EMPTY_STACK = "취소할 작업이 없습니다."
     }
