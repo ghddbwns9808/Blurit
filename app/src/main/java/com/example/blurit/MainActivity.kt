@@ -19,7 +19,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(
 ) {
     private val mainViewModel: MainViewModel by viewModels()
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -39,7 +38,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(
 
         if (Intent.ACTION_SEND == action && type != null) {
             if ("image/*" == type) {
-                val imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                val imageUri = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+                }
+
                 mainViewModel.setUri(imageUri)
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.layout_main_fragment, EditFragment())
