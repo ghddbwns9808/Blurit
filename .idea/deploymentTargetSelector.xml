@@ -16,10 +16,16 @@
       <SelectionState runConfigName="EditViewModelTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="initBitmapShouldInitializeCanvasesCorrectly()">
+      <SelectionState runConfigName="initBitmapTest()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="initBitmapTest()">
+      <SelectionState runConfigName="EditViewModelTest (1)">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="applyAutoMosaicShouldUpdateBlurCanvas() (1)">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="initBitmapShouldInitializeCanvasesCorrectly()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

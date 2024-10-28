@@ -56,10 +56,10 @@ dependencies {
     implementation(libs.fragment)
 
     // Testing
-    implementation (libs.testing.core)
-    implementation(libs.testing.coroutine)
-    implementation(libs.mockito.core)
-    implementation(libs.mockito.android)
-    implementation(libs.mockito.kotlin)
-    implementation(libs.mockk)
+    androidTestImplementation (libs.testing.core)
+    androidTestImplementation(libs.testing.coroutine)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.mockk)
+
 }

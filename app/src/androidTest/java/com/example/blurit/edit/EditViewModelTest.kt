@@ -1,15 +1,16 @@
-package com.example.blurit.edit
-
 import android.graphics.Bitmap
+import android.graphics.Rect
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.Observer
+import com.example.blurit.edit.EditViewModel
+import com.google.mlkit.vision.face.Face
+import com.google.mlkit.vision.face.FaceContour
+import com.google.mlkit.vision.face.FaceLandmark
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.Mockito.mock
 
 class EditViewModelTest {
 
@@ -18,23 +19,9 @@ class EditViewModelTest {
 
     private lateinit var viewModel: EditViewModel
 
-    @Mock
-    private lateinit var originalCanvasObserver: Observer<Bitmap>
-
-    @Mock
-    private lateinit var blurCanvasObserver: Observer<Bitmap>
-
-    @Mock
-    private lateinit var thicknessCanvasObserver: Observer<Bitmap>
-
     @Before
     fun setup() {
-        MockitoAnnotations.openMocks(this)
         viewModel = EditViewModel()
-
-        viewModel.originalCanvas.observeForever(originalCanvasObserver)
-        viewModel.blurCanvas.observeForever(blurCanvasObserver)
-        viewModel.thicknessCanvas.observeForever(thicknessCanvasObserver)
     }
 
     @Test
@@ -57,7 +44,6 @@ class EditViewModelTest {
         assertNotNull("blurCanvas should be initialized", initializedBlurCanvas)
         assertNotNull("thicknessCanvas should be initialized", initializedThicknessCanvas)
 
-        // Additional assertions to confirm that the bitmaps have the expected dimensions and configurations
         assertEquals(imageViewWidth, initializedOriginalCanvas!!.width)
         assertEquals(imageViewHeight, initializedOriginalCanvas.height)
 

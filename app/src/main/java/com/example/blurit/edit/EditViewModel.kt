@@ -33,7 +33,12 @@ class EditViewModel: ViewModel() {
     val thicknessCanvas : LiveData<Bitmap>
         get() = _thicknessCanvas
 
+    private val _toastMsg = MutableLiveData<String>()
+    val toastMsg : LiveData<String>
+        get() = _toastMsg
+
     private lateinit var originalBitmapMetadata: Bitmap
+
 
     init {
         val highAccuracyOpts = FaceDetectorOptions.Builder()
@@ -50,7 +55,7 @@ class EditViewModel: ViewModel() {
                 if (faces.isNotEmpty()) {
                     applyAutoMosaic(faces, blur)
                 } else {
-//                    activity.showToast(activity.getString(R.string.edit_no_face))
+                    _toastMsg.value = NO_FACE_MSG
                 }
             }
             .addOnFailureListener { e ->
@@ -58,8 +63,7 @@ class EditViewModel: ViewModel() {
             }
     }
 
-    fun applyAutoMosaic(faces: List<Face>, size: Int) {
-//        saveCanvasState()
+    private fun applyAutoMosaic(faces: List<Face>, size: Int) {
         val blurBitmap = _blurCanvas.value?.copy(Bitmap.Config.ARGB_8888, true) ?: return
         val canvas = Canvas(blurBitmap)
 
@@ -122,6 +126,10 @@ class EditViewModel: ViewModel() {
         } catch (e: IOException) {
             e.printStackTrace()
         }
+    }
+
+    companion object{
+        const val NO_FACE_MSG = "인식된 얼굴이 없습니다."
     }
 
 }

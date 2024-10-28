@@ -382,6 +382,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         viewModel.thicknessCanvas.observe(viewLifecycleOwner) { bitmap ->
             binding.ivThickCanvas.setImageBitmap(bitmap)
         }
+
+        viewModel.toastMsg.observe(viewLifecycleOwner){ msg ->
+            activity.showToast(msg)
+        }
     }
 
     enum class EditMode {
