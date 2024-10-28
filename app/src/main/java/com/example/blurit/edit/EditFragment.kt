@@ -14,12 +14,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import com.example.blurit.MainActivity
 import com.example.blurit.MainViewModel
 import com.example.blurit.R
@@ -27,10 +27,6 @@ import com.example.blurit.base.BaseFragment
 import com.example.blurit.databinding.FragmentEditBinding
 import com.google.android.material.slider.Slider
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.Face
-import com.google.mlkit.vision.face.FaceDetection
-import com.google.mlkit.vision.face.FaceDetector
-import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.IOException
 import java.io.OutputStream
 import java.util.Stack
@@ -44,15 +40,10 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
 ) {
     private lateinit var activity: MainActivity
     private val mainViewModel: MainViewModel by activityViewModels()
+    private val viewModel: EditViewModel by viewModels()
 
-    private val highAccuracyOpts = FaceDetectorOptions.Builder()
-        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
-        .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
-        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-        .build()
 
     private lateinit var image: InputImage
-    private lateinit var detector: FaceDetector
 
     private lateinit var originalBitmap: Bitmap
     private lateinit var blurCanvas: Bitmap
@@ -67,53 +58,9 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         super.onViewCreated(view, savedInstanceState)
         activity = _activity as MainActivity
         initView()
-        detector = FaceDetection.getClient(highAccuracyOpts)
+        initObserver()
     }
 
-    private fun applyAutoMosaic(faces: List<Face>, size: Int) {
-        saveCanvasState()
-        val canvas = Canvas(blurCanvas)
-
-        faces.forEach { face ->
-            val boundingBox = face.boundingBox
-
-            val centerX = boundingBox.centerX().toFloat()
-            val centerY = boundingBox.centerY().toFloat()
-            val radius = boundingBox.width().coerceAtMost(boundingBox.height()) / 2f
-
-            val blockSize = radius.toInt() / (13 - size)
-
-            for (y in boundingBox.top until boundingBox.bottom step blockSize) {
-                for (x in boundingBox.left until boundingBox.right step blockSize) {
-
-                    val blockCenterX = x + blockSize / 2f
-                    val blockCenterY = y + blockSize / 2f
-
-                    val distanceFromCenter = sqrt(
-                        (blockCenterX - centerX).toDouble().pow(2.0) +
-                                (blockCenterY - centerY).toDouble().pow(2.0)
-                    )
-
-                    if (distanceFromCenter <= radius) {
-                        val pixelColor = originalBitmap.getPixel(x, y)
-
-                        val paint = Paint()
-                        paint.color = pixelColor
-
-                        canvas.drawRect(
-                            x.toFloat(),
-                            y.toFloat(),
-                            (x + blockSize).toFloat(),
-                            (y + blockSize).toFloat(),
-                            paint
-                        )
-                    }
-                }
-            }
-        }
-
-        binding.ivBlurCanvas.setImageBitmap(blurCanvas)
-    }
 
     private fun applyManualMosaic(touchX: Int, touchY: Int) {
         val canvas = Canvas(blurCanvas)
@@ -350,17 +297,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         binding.btnAutoMosaic.setOnClickListener {
-            detector.process(image)
-                .addOnSuccessListener { faces ->
-                    if (faces.isNotEmpty()) {
-                        applyAutoMosaic(faces, binding.sdBlur.value.toInt())
-                    } else {
-                        activity.showToast(activity.getString(R.string.edit_no_face))
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Face detection failed: $e")
-                }
+            viewModel.autoMosaic(binding.sdBlur.value.toInt())
         }
 
         binding.sdThick.addOnChangeListener { slider, value, fromUser ->
@@ -408,7 +345,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
             ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 binding.flCanvas.viewTreeObserver.removeOnGlobalLayoutListener(this)
-
                 try {
                     val imageViewWidth = binding.ivPhoto.width
 
@@ -426,35 +362,26 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                         )
                     }
 
-                    originalImageMetadata = original
-
-                    val aspectRatio = original.width.toFloat() / original.height
-                    val imageViewHeight = (imageViewWidth / aspectRatio).toInt()
-
-                    originalBitmap =
-                        Bitmap.createScaledBitmap(original, imageViewWidth, imageViewHeight, true)
-                            .copy(Bitmap.Config.ARGB_8888, true)
-                    binding.ivPhoto.setImageBitmap(originalBitmap)
-                    image = InputImage.fromBitmap(originalBitmap, 0)
-
-                    blurCanvas = Bitmap.createBitmap(
-                        imageViewWidth,
-                        imageViewHeight,
-                        Bitmap.Config.ARGB_8888
-                    )
-                    thickCanvas = Bitmap.createBitmap(
-                        imageViewWidth,
-                        imageViewHeight,
-                        Bitmap.Config.ARGB_8888
-                    )
-
-                    binding.ivBlurCanvas.setImageBitmap(blurCanvas)
-                    binding.ivThickCanvas.setImageBitmap(thickCanvas)
+                    viewModel.initBitmap(original, imageViewWidth)
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
             }
         })
+    }
+
+    private fun initObserver(){
+        viewModel.originalCanvas.observe(viewLifecycleOwner) { bitmap ->
+            binding.ivPhoto.setImageBitmap(bitmap)
+        }
+
+        viewModel.blurCanvas.observe(viewLifecycleOwner) { bitmap ->
+            binding.ivBlurCanvas.setImageBitmap(bitmap)
+        }
+
+        viewModel.thicknessCanvas.observe(viewLifecycleOwner) { bitmap ->
+            binding.ivThickCanvas.setImageBitmap(bitmap)
+        }
     }
 
     enum class EditMode {
