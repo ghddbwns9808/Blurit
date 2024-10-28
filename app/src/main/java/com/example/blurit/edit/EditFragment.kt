@@ -200,22 +200,6 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         return combinedBitmap
     }
 
-//    private fun saveBitmapToGallery(bitmap: Bitmap) {
-//        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, originalImageMetadata.width, originalImageMetadata.height, true)
-//        val savedUri = MediaStore.Images.Media.insertImage(
-//            requireContext().contentResolver,
-//            resizedBitmap,
-//            "${originalImageMetadata.config.name}_blurit",
-//            "Image created by Blurit"
-//        )
-//
-//        if (savedUri != null) {
-//            activity.showToast(activity.getString(R.string.edit_save_success))
-//        } else {
-//            activity.showToast(activity.getString(R.string.edit_save_fail))
-//        }
-//    }
-
     private fun saveBitmapToGallery(bitmap: Bitmap) {
         val filename = "${originalImageMetadata.config.name}_blurit.jpg"
         val contentValues = ContentValues().apply {
