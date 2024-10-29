@@ -30,7 +30,6 @@ face-detection = {group = "com.google.mlkit", name = "face-detection", version.r
 fragment = {group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment"}
 testing-core = {group = "androidx.arch.core", name = "core-testing", version.ref = "testingCore"}
 testing-coroutine = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "testingCoroutine"}
-mockito-core = {group = "org.mockito", name = "mockito-core", version.ref = "mockito"}
 mockito-android = {group = "org.mockito", name = "mockito-android", version.ref = "mockito"}
 mockito-kotlin = {group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin"}
 mockk = {group = "io.mockk", name = "mockk", version.ref = "mockk"}

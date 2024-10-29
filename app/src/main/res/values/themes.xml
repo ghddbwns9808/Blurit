@@ -1,8 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Blurit" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="S">@android:color/transparent</item>
     </style>
 
     <style name="Theme.Blurit" parent="Base.Theme.Blurit" />
@@ -11,4 +10,5 @@
         <item name="android:textColor">@color/blurit_pink</item>
         <item name="fontFamily">@font/pretendard_medium</item>
     </style>
+
 </resources>

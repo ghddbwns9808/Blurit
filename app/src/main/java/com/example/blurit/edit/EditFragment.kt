@@ -12,6 +12,7 @@ import android.provider.MediaStore
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -164,20 +165,19 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
                 outputStream = resolver.openOutputStream(uri)
                 if (outputStream != null) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                    activity.showToast(activity.getString(R.string.edit_save_success))
-
+                    Toast.makeText(activity, activity.getString(R.string.edit_save_success), Toast.LENGTH_SHORT).show()
                     showShareDialog(uri)
                 } else {
-                    activity.showToast(activity.getString(R.string.edit_save_fail))
+                    Toast.makeText(activity, activity.getString(R.string.edit_save_fail), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
-                activity.showToast(activity.getString(R.string.edit_save_fail))
+                Toast.makeText(activity, activity.getString(R.string.edit_save_fail), Toast.LENGTH_SHORT).show()
             } finally {
                 outputStream?.close()
             }
         } else {
-            activity.showToast(activity.getString(R.string.edit_save_fail))
+            Toast.makeText(activity, activity.getString(R.string.edit_save_fail), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -254,7 +254,7 @@ class EditFragment : BaseFragment<FragmentEditBinding>(
         }
 
         viewModel.toastMsg.observe(viewLifecycleOwner) { msg ->
-            activity.showToast(msg)
+            Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
