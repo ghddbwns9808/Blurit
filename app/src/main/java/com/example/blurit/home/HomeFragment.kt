@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
@@ -59,7 +60,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
             return
         }
         backPressedOnce = true
-        activity.showToast(activity.getString(R.string.backpress_to_quit))
+        Toast.makeText(activity, activity.getString(R.string.backpress_to_quit), Toast.LENGTH_SHORT).show()
 
         Handler(Looper.getMainLooper()).postDelayed({ backPressedOnce = false }, 2000)
     }
